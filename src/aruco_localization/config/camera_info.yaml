@@ -1,0 +1,14 @@
+%YAML:1.0
+# Placeholder camera calibration file
+image_width: 640
+image_height: 480
+camera_name: aruco_camera
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [0, 0, 0, 0, 0, 0, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [0, 0, 0, 0, 0]
