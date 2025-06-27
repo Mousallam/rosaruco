@@ -1,46 +1,54 @@
 # ROS ArUco Robot Project
 
-This workspace now includes a basic framework for a real-time ArUco based localization
-and navigation system.  The original example nodes are kept in the `QRfollowing`
-package while the new implementation lives in `aruco_localization`.
+This workspace contains an example implementation for marker based
+localisation and simple navigation.  The main package is
+`aruco_localization` which provides three nodes:
 
-## Packages
+* **camera_calibration_node.py** – interactively calibrate the camera using
+  a chessboard pattern.
+* **aruco_detector.py** – detect the four ArUco markers arranged as a
+  2×2 grid on the floor and publish a 2‑D pose estimate of the robot.
+* **motion_commander.py** – move the robot towards one of the markers
+  using the pose estimate.
 
-### `QRfollowing`
-Contains the original example nodes:
-- `camera_intrinsics_node.py` – calibrate the camera.
-- `camera_node.py` – detect a single marker and publish its path.
-- `crtmovement.py` – simple forward/backward controller.
-- `odom_control_movement.py` – controller using odometry feedback.
+The original tutorial code is kept in the `QRfollowing` package.
 
-### `aruco_localization`
-Folder layout:
+## Usage
+
+1. **Calibrate the camera**
+
+   Run the calibration node and follow the on screen instructions.
+   Capture several chessboard views with the `c` key and press `q` when
+   finished.  The calibration results are written to `config/camera_info.yaml`.
+
+   ```bash
+   roslaunch aruco_localization calibration.launch
+   ```
+
+2. **Run detection and navigation**
+
+   Launch the detector and controller together.  Set the desired goal
+   marker ID with the `goal_id` parameter.
+
+   ```bash
+   roslaunch aruco_localization full_demo.launch goal_id:=3
+   ```
+
+During operation a window will display the camera feed with detected
+markers outlined.  The controller publishes velocity commands at
+`0.1 m/s` and after each small step waits for a new pose estimate from
+`aruco_detector`.  If no update arrives the previous estimate is used
+instead.
+
+## Files
+
 ```
 aruco_localization/
-  scripts/                # Python nodes
-  launch/                 # Launch files
-  config/                 # Camera calibration YAML
-  maps/                   # Static marker map
+  scripts/     # Python nodes
+  launch/      # Example launch files
+  config/      # Camera calibration YAML
+  maps/        # Marker map used for localisation
 ```
 
-Provided node templates:
-- `camera_calibration_node.py`
-- `aruco_detector.py`
-- `localization_manager.py`
-- `motion_commander.py`
-
-## Example Usage
-```
-# Calibrate the camera
-roslaunch aruco_localization calibration.launch
-
-# Run detection and localization
-roslaunch aruco_localization bringup.launch
-
-# Send a motion command
-rostopic pub /command std_msgs/String "forward"
-```
-
-These nodes are only skeletons and need further implementation to be fully
-functional.
-
+The markers are defined in `maps/map.yaml` as a 2×2 grid with one metre
+spacing starting from marker `0` at the origin.

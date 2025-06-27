@@ -1,0 +1,5 @@
+<launch>
+  <node name="camera_calibration" pkg="aruco_localization" type="camera_calibration_node.py" output="screen" />
+  <node name="aruco_detector" pkg="aruco_localization" type="aruco_detector.py" output="screen" />
+  <node name="motion_commander" pkg="aruco_localization" type="motion_commander.py" output="screen" />
+</launch>
