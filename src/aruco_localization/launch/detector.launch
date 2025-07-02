@@ -1,3 +1,0 @@
-<launch>
-  <node name="aruco_detector" pkg="aruco_localization" type="aruco_detector.py" output="screen"/>
-</launch>

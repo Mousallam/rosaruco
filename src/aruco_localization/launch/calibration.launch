@@ -1,3 +1,0 @@
-<launch>
-  <node name="camera_calibration" pkg="aruco_localization" type="camera_calibration_node.py" output="screen"/>
-</launch>

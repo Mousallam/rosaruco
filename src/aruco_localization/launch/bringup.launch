@@ -1,5 +1,0 @@
-<launch>
-  <include file="$(find aruco_localization)/launch/detector.launch"/>
-  <node name="localization_manager" pkg="aruco_localization" type="localization_manager.py" output="screen"/>
-  <node name="motion_commander" pkg="aruco_localization" type="motion_commander.py" output="screen"/>
-</launch>

@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Interactive chessboard camera calibration.
 
-OpenCV based calibration that captures frames from the default camera.
-Press ``c`` to capture a chessboard view and ``q`` when done. Results
-are written to the package ``config`` directory and published on the
-``/camera_info`` topic.
-"""
 import os
 import rospy
 import rospkg
