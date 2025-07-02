@@ -1,14 +1,18 @@
 %YAML:1.0
-# Placeholder camera calibration file
-image_width: 640
-image_height: 480
+---
+image_width: 640.
+image_height: 480.
 camera_name: aruco_camera
-camera_matrix:
-  rows: 3
-  cols: 3
-  data: [0, 0, 0, 0, 0, 0, 0, 0, 1]
-distortion_model: plumb_bob
-distortion_coefficients:
-  rows: 1
-  cols: 5
-  data: [0, 0, 0, 0, 0]
+camera_matrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 6.3600140546138925e+02, 0., 3.2699690486457297e+02, 0.,
+       6.3245172175248581e+02, 2.5560632554636678e+02, 0., 0., 1. ]
+distortion_coefficients: !!opencv-matrix
+   rows: 5
+   cols: 1
+   dt: d
+   data: [ 1.2562144064240893e-01, -7.4184378091191638e-01,
+       -3.6034240620442678e-03, 1.0218381768845545e-03,
+       5.5002157792756123e-01 ]

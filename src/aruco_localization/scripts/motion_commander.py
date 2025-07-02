@@ -1,77 +1,87 @@
 #!/usr/bin/env python3
-"""Navigation controller that moves the robot towards a marker ID.
-
-The controller subscribes to ``/robot_pose`` published by ``aruco_detector``
-and sends ``Twist`` commands on ``/cmd_vel``.  The goal marker id is provided
-via the ``~goal_id`` parameter.  The robot moves with a speed of ``0.1`` and
-requests a new pose estimate after each small step.
-"""
 import math
-import os
 import yaml
 import rospy
 import rospkg
+from std_msgs.msg import Int32
 from geometry_msgs.msg import Twist, Pose2D
-
 
 class MotionCommander:
     def __init__(self):
         rospy.init_node('motion_commander')
+
+        # load map of marker positions
         rp = rospkg.RosPack()
         pkg_path = rp.get_path('aruco_localization')
-        map_file = os.path.join(pkg_path, 'maps', 'map.yaml')
-        with open(map_file) as f:
+        with open(pkg_path + '/maps/map.yaml') as f:
             self.map = yaml.safe_load(f)
 
-        self.goal_id = rospy.get_param('~goal_id', 0)
+        # drive speed (m/s)
         self.speed = 0.1
+        # current robot pose from aruco_detector
         self.pose = None
-        self.last_update = rospy.Time(0)
+        # latest goal marker ID
+        self.goal_id = None
 
+        # subscribers & publishers
         rospy.Subscriber('/robot_pose', Pose2D, self.pose_cb)
+        rospy.Subscriber('/goal_id',     Int32,  self.goal_cb)
         self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
     def pose_cb(self, msg):
         self.pose = msg
-        self.last_update = rospy.Time.now()
+
+    def goal_cb(self, msg):
+        self.goal_id = msg.data
+        rospy.loginfo("New goal_id set: %d", self.goal_id)
 
     def run(self):
-        goal = self.map.get(f'marker_{self.goal_id}')
-        if goal is None:
-            rospy.logerr('Unknown goal id %s', self.goal_id)
-            return
         rate = rospy.Rate(5)
         est_pose = None
+
         while not rospy.is_shutdown():
-            if self.pose is not None:
-                if est_pose is None:
-                    est_pose = [self.pose.x, self.pose.y]
-                else:
-                    est_pose[0] = 0.5 * est_pose[0] + 0.5 * self.pose.x
-                    est_pose[1] = 0.5 * est_pose[1] + 0.5 * self.pose.y
-            if est_pose is None:
+            # wait until both pose & goal_id have been received
+            if self.pose is None or self.goal_id is None:
                 rate.sleep()
                 continue
+
+            goal = self.map.get(f'marker_{self.goal_id}')
+            if goal is None:
+                rospy.logwarn("Unknown goal_id %d", self.goal_id)
+                rate.sleep()
+                continue
+
+            # smooth estimate of current pose
+            if est_pose is None:
+                est_pose = [self.pose.x, self.pose.y]
+            else:
+                est_pose[0] = 0.5 * est_pose[0] + 0.5 * self.pose.x
+                est_pose[1] = 0.5 * est_pose[1] + 0.5 * self.pose.y
+
+            # compute distance to goal
             dx = goal[0] - est_pose[0]
             dy = goal[1] - est_pose[1]
             dist = math.hypot(dx, dy)
+
+            # if close enough → stop
             if dist < 0.05:
                 self.cmd_pub.publish(Twist())
-                rospy.loginfo('Goal reached')
+                rospy.loginfo("Reached marker_%d", self.goal_id)
                 break
-            step = min(dist, 0.1)
+
+            # otherwise, step forward
             tw = Twist()
             tw.linear.x = self.speed
             self.cmd_pub.publish(tw)
-            rospy.sleep(step / self.speed)
+
+            # sleep for exactly the travel time
+            travel_time = min(dist, 0.1) / self.speed
+            rospy.sleep(travel_time)
+
+            # stop briefly and wait for new pose
             self.cmd_pub.publish(Twist())
-            # predict next pose
-            est_pose[0] += math.cos(0) * step
-            est_pose[1] += math.sin(0) * step
-            # wait a bit for a new pose estimate
             rospy.sleep(0.2)
             rate.sleep()
-
 
 if __name__ == '__main__':
     MotionCommander().run()

@@ -16,8 +16,8 @@ from sensor_msgs.msg import CameraInfo
 
 def main():
     rospy.init_node("camera_calibration_node")
-    board_size = (7, 6)  # inner corners
-    square_size = rospy.get_param("~square_size", 0.025)  # meters
+    board_size = (7, 4)  # inner corners
+    square_size = rospy.get_param("~square_size", 0.04)  # meters
     objp = np.zeros((board_size[0] * board_size[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:board_size[0], 0:board_size[1]].T.reshape(-1, 2)
     objp *= square_size
@@ -45,7 +45,7 @@ def main():
         key = cv2.waitKey(1) & 0xFF
         if key == ord('c') and found:
             obj_points.append(objp.copy())
-            img_points.append(corners)
+            img_points.append(corners.copy())
             rospy.loginfo("Captured image %d", len(obj_points))
         elif key == ord('q'):
             break
@@ -77,8 +77,15 @@ def main():
         }
     }
     fs = cv2.FileStorage(yaml_path, cv2.FILE_STORAGE_WRITE)
-    for k, v in data.items():
-        fs.write(k, np.array(v) if isinstance(v, list) else v)
+    fs.write("image_width", float(data['image_width']))
+    fs.write("image_height", float(data['image_height']))
+    fs.write("camera_name", str(data['camera_name']))
+    # write camera_matrix as a Mat
+    mtx_mat = np.array(data['camera_matrix']['data'], dtype=np.float64).reshape(3,3)
+    fs.write("camera_matrix", mtx_mat)
+    # write distortion coefficients
+    dist_mat = np.array(data['distortion_coefficients']['data'], dtype=np.float64)
+    fs.write("distortion_coefficients", dist_mat)
     fs.release()
     rospy.loginfo("Calibration saved to %s", yaml_path)
 
