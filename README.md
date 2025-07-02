@@ -93,6 +93,3 @@ aruco_localization/
   config/      # Camera calibration YAML
   maps/        # Marker map for localisation
 ```
-
-The provided components are intentionally simple and can serve as a starting
-point for more complex robots and marker layouts.
